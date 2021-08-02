@@ -1,29 +1,22 @@
-import { useCallback, useRef, useState } from 'react';
+/* eslint-disable no-unused-vars */
+import { useEffect, useState } from 'react';
 import useBookSearch from './useBookSearch';
+import { useInView } from 'react-intersection-observer';
 import './App.css';
 
 function App() {
   const [query, setQuery] = useState('');
   const [pageNumber, setPageNumber] = useState(1);
 
-  // eslint-disable-next-line no-unused-vars
   const { books, loading, error, hasMore } = useBookSearch(query, pageNumber);
 
-  const observer = useRef();
-  const lastElementRef = useCallback( node => {
-    console.log(node)
-    if(loading) return;
-    if(observer.current) observer.current.disconnect();
+  const {ref, inView, entry} = useInView();
 
-    observer.current = new IntersectionObserver(entries => {
-      if(entries[0].isIntersecting && hasMore) {
-        setPageNumber(prevPage => prevPage + 1)
-      }
-    })
-
-    if (node) observer.current.observe(node)
-
-  }, [loading, hasMore]);
+  useEffect( () => {
+    if(entry && entry.isIntersecting && hasMore) {
+      setPageNumber(prevPage => prevPage + 1)
+    }
+  }, [inView, entry, hasMore]);
 
   function handleSearch(e) {
     setQuery(e.target.value);
@@ -36,15 +29,15 @@ function App() {
       {books.map((b, index) => {
         if (index === books.length - 1) {
           return (
-            <div ref={lastElementRef} key={b}>
+            <div className="book-item" ref={ref} key={b}>
               {b}
             </div>
           );
         } else {
-          return <div key={b}>{b}</div>;
+          return <div className="book-item" key={b}>{b}</div>;
         }
       })}
-      <div>{loading && 'Loading ...'}</div>
+      <div className="loader">{loading && 'Loading ...'}</div>
       <div>{error && 'error'}</div>
     </div>
   );
